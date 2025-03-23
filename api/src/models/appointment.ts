@@ -12,9 +12,7 @@ import { appointmentSchema } from "../schemas/appointments";
  */
 class Appointment {
   // In memory storage of appointments with the appointmentDateTime as the key for faster lookups
-  private static appointments: {
-    [key: Appointment["appointmentDateTime"]]: Appointment;
-  } = {};
+  private static appointments: Appointment[] = [];
 
   // Properties
   readonly id: string;
@@ -70,14 +68,14 @@ class Appointment {
     this.appointmentDuration = data.appointmentDuration;
   }
 
-  static async schedule({
+  static schedule({
     appointmentDateTime,
     customer,
     location,
     vehicle,
     appointmentDuration,
-  }: z.infer<typeof appointmentSchema>): Promise<Appointment> {
-    const canSchedule = await this.canSchedule({
+  }: z.infer<typeof appointmentSchema>): Appointment {
+    const canSchedule = this.canSchedule({
       appointmentDateTime,
       appointmentDuration,
     });
@@ -85,7 +83,7 @@ class Appointment {
       throw new Error("This appointment time is already booked");
     }
 
-    const appointment = await this.save({
+    const appointment = this.save({
       appointmentDateTime,
       customer,
       location,
@@ -96,30 +94,7 @@ class Appointment {
     return appointment;
   }
 
-  static async canSchedule({
-    appointmentDateTime,
-    appointmentDuration,
-  }: {
-    appointmentDateTime: Appointment["appointmentDateTime"];
-    appointmentDuration: Appointment["appointmentDuration"];
-  }): Promise<boolean> {
-    const isWithinWorkingHours = this.isWithinWorkingHours({
-      appointmentDateTime,
-      appointmentDuration,
-    });
-
-    if (!isWithinWorkingHours) {
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Ensures the appointment is within the business hours of 9am-5pm for the given date and time zone.
-   * Handles the case where an appointment could start at 4:15pm and end at 5:15pm (would return false since it ends after 5pm).
-   */
-  static isWithinWorkingHours({
+  static canSchedule({
     appointmentDateTime,
     appointmentDuration,
   }: {
@@ -128,7 +103,34 @@ class Appointment {
   }): boolean {
     const startTime = DateTime.fromISO(appointmentDateTime);
     const endTime = startTime.plus({ minutes: appointmentDuration });
+    const isWithinWorkingHours = this.isWithinWorkingHours({
+      startTime,
+      endTime,
+    });
+    const conflictsWithOtherAppointments =
+      this.conflictsWithExistingAppointments({
+        startTime,
+        endTime,
+      });
 
+    if (!isWithinWorkingHours || conflictsWithOtherAppointments) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Ensures the appointment is within the business hours of 9am-5pm for the given start/endTime.
+   * Handles the case where an appointment could start at 4:15pm and end at 5:15pm (would return false since it ends after 5pm).
+   */
+  static isWithinWorkingHours({
+    startTime,
+    endTime,
+  }: {
+    startTime: DateTime;
+    endTime: DateTime;
+  }): boolean {
     const businessStart = startTime.set({
       hour: 9,
       minute: 0,
@@ -145,13 +147,45 @@ class Appointment {
     return startTime >= businessStart && endTime <= businessEnd;
   }
 
-  static async save({
+  /**
+   * Handles the following cases:
+   *   - The appointment starts and ends within another appointment
+   *   - The appointment starts before another appointment and ends within it
+   *   - The appointment starts within another appointment and ends after it
+   *   - The appointment starts before and ends after another appointment
+   */
+  static conflictsWithExistingAppointments({
+    startTime,
+    endTime,
+  }: {
+    startTime: DateTime;
+    endTime: DateTime;
+  }): boolean {
+    const conflicts = this.appointments.filter((appointment) => {
+      const appointmentStartTime = DateTime.fromISO(
+        appointment.appointmentDateTime
+      );
+      const appointmentEndTime = appointmentStartTime.plus({
+        minutes: appointment.appointmentDuration,
+      });
+
+      return startTime < appointmentEndTime && endTime > appointmentStartTime;
+    });
+
+    return conflicts.length > 0;
+  }
+
+  /**
+   * This method assumes that the appointment is within business hours for the local time given and does not interfere
+   * with existing appointments. Therefore, validate those assumptions before calling this method.
+   */
+  private static save({
     appointmentDateTime,
     customer,
     location,
     vehicle,
     appointmentDuration,
-  }: z.infer<typeof appointmentSchema>): Promise<Appointment> {
+  }: z.infer<typeof appointmentSchema>): Appointment {
     const appointment = new Appointment({
       appointmentDateTime,
       customer,
@@ -160,7 +194,7 @@ class Appointment {
       appointmentDuration,
     });
 
-    this.appointments[appointment.appointmentDateTime] = appointment;
+    this.appointments.push(appointment);
 
     return appointment;
   }
