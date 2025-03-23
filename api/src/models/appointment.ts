@@ -42,7 +42,7 @@ class Appointment {
   public appointmentDuration: number;
 
   constructor(data: {
-    id: string;
+    id?: string;
     appointmentDateTime: string;
     customer: {
       firstName: string;
@@ -62,7 +62,7 @@ class Appointment {
     };
     appointmentDuration: number;
   }) {
-    this.id = randomUUID();
+    this.id = data.id || randomUUID();
     this.appointmentDateTime = data.appointmentDateTime;
     this.customer = data.customer;
     this.location = data.location;
@@ -102,7 +102,18 @@ class Appointment {
   }: {
     appointmentDateTime: Appointment["appointmentDateTime"];
     appointmentDuration: Appointment["appointmentDuration"];
-  }): Promise<boolean> {}
+  }): Promise<boolean> {
+    const isWithinWorkingHours = this.isWithinWorkingHours({
+      appointmentDateTime,
+      appointmentDuration,
+    });
+
+    if (!isWithinWorkingHours) {
+      return false;
+    }
+
+    return true;
+  }
 
   /**
    * Ensures the appointment is within the business hours of 9am-5pm for the given date and time zone.
@@ -140,7 +151,19 @@ class Appointment {
     location,
     vehicle,
     appointmentDuration,
-  }: z.infer<typeof appointmentSchema>): Promise<Appointment> {}
+  }: z.infer<typeof appointmentSchema>): Promise<Appointment> {
+    const appointment = new Appointment({
+      appointmentDateTime,
+      customer,
+      location,
+      vehicle,
+      appointmentDuration,
+    });
+
+    this.appointments[appointment.appointmentDateTime] = appointment;
+
+    return appointment;
+  }
 }
 
 export default Appointment;
