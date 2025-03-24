@@ -21,6 +21,10 @@ class Appointment {
    * timezone, which would increase complexity beyond the scope of this project.
    */
   public appointmentDateTime: string;
+  /**
+   * IANA formatted time zone.
+   */
+  public timeZone: string;
   public customer: {
     firstName: string;
     lastName: string;
@@ -42,6 +46,7 @@ class Appointment {
   constructor(data: {
     id?: string;
     appointmentDateTime: string;
+    timeZone: string;
     customer: {
       firstName: string;
       lastName: string;
@@ -62,6 +67,7 @@ class Appointment {
   }) {
     this.id = data.id || randomUUID();
     this.appointmentDateTime = data.appointmentDateTime;
+    this.timeZone = data.timeZone;
     this.customer = data.customer;
     this.location = data.location;
     this.vehicle = data.vehicle;
@@ -70,6 +76,7 @@ class Appointment {
 
   static schedule({
     appointmentDateTime,
+    timeZone,
     customer,
     location,
     vehicle,
@@ -85,6 +92,7 @@ class Appointment {
 
     const appointment = this.save({
       appointmentDateTime,
+      timeZone,
       customer,
       location,
       vehicle,
@@ -181,6 +189,7 @@ class Appointment {
    */
   private static save({
     appointmentDateTime,
+    timeZone,
     customer,
     location,
     vehicle,
@@ -188,6 +197,7 @@ class Appointment {
   }: z.infer<typeof appointmentSchema>): Appointment {
     const appointment = new Appointment({
       appointmentDateTime,
+      timeZone,
       customer,
       location,
       vehicle,
@@ -197,6 +207,10 @@ class Appointment {
     this.appointments.push(appointment);
 
     return appointment;
+  }
+
+  static getAll(): Appointment[] {
+    return this.appointments;
   }
 }
 

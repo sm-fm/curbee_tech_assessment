@@ -15,7 +15,7 @@ router.post(
     try {
       const validatedAppointmentData = appointmentSchema.parse(req.body);
 
-      const appointment = await Appointment.schedule(validatedAppointmentData);
+      const appointment = Appointment.schedule(validatedAppointmentData);
 
       res.status(201).json({ success: true, id: appointment.id });
     } catch (error) {
@@ -38,5 +38,10 @@ router.post(
     }
   }
 );
+
+router.get("/", async (req: Request, res: Response) => {
+  const appointments = Appointment.getAll();
+  res.json({ success: true, appointments });
+});
 
 export default router;
