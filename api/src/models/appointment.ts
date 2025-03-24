@@ -169,6 +169,11 @@ class Appointment {
    *   - The appointment starts before another appointment and ends within it
    *   - The appointment starts within another appointment and ends after it
    *   - The appointment starts before and ends after another appointment
+   *
+   *  Does not allow a new appointment's start time to be the same as an existing appointment's end time or
+   *  end time to be the same as an existing appointment's start time.
+   *
+   * TODO: Consider adding buffer time between appointments (i.e. 30 minute buffer to allow setup/cleanup/travel time)
    */
   static conflictsWithExistingAppointments({
     startTime,
@@ -185,7 +190,7 @@ class Appointment {
         minutes: appointment.appointmentDuration,
       });
 
-      return startTime < appointmentEndTime && endTime > appointmentStartTime;
+      return startTime <= appointmentEndTime && endTime >= appointmentStartTime;
     });
 
     return conflicts.length > 0;
