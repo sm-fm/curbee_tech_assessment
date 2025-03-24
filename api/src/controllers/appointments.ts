@@ -6,13 +6,11 @@ import { Appointment as Body_POST_Appointment } from "../types/appointment";
 
 const router = Router();
 
-/**
- * Since I don't know anything about the client calling this endpoint, I'm assuming I need to validate the request body.
- */
 router.post(
   "/",
   async (req: Request<{}, {}, Body_POST_Appointment>, res: Response) => {
     try {
+      // Validate the request body matches the expected schema
       const validatedAppointmentData = appointmentSchema.parse(req.body);
 
       const appointment = Appointment.schedule(validatedAppointmentData);

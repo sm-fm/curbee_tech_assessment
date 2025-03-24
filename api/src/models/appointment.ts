@@ -22,7 +22,7 @@ class Appointment {
    */
   public appointmentDateTime: string;
   /**
-   * IANA formatted time zone.
+   * IANA or POSIX formatted time zone as supported by Luxon.
    */
   public timeZone: string;
   public customer: {
@@ -84,6 +84,7 @@ class Appointment {
   }: z.infer<typeof appointmentSchema>): Appointment {
     const canSchedule = this.canSchedule({
       appointmentDateTime,
+      timeZone,
       appointmentDuration,
     });
     if (!canSchedule) {
@@ -104,9 +105,11 @@ class Appointment {
 
   static canSchedule({
     appointmentDateTime,
+    timeZone,
     appointmentDuration,
   }: {
     appointmentDateTime: Appointment["appointmentDateTime"];
+    timeZone: Appointment["timeZone"];
     appointmentDuration: Appointment["appointmentDuration"];
   }): boolean {
     const startTime = DateTime.fromISO(appointmentDateTime);
@@ -114,6 +117,7 @@ class Appointment {
     const isWithinWorkingHours = this.isWithinWorkingHours({
       startTime,
       endTime,
+      timeZone,
     });
     const conflictsWithOtherAppointments =
       this.conflictsWithExistingAppointments({
@@ -129,30 +133,34 @@ class Appointment {
   }
 
   /**
-   * Ensures the appointment is within the business hours of 9am-5pm for the given start/endTime.
+   * Ensures the appointment is within the business hours of 9am-5pm for the given start/endTime and timeZone.
    * Handles the case where an appointment could start at 4:15pm and end at 5:15pm (would return false since it ends after 5pm).
    */
   static isWithinWorkingHours({
     startTime,
     endTime,
+    timeZone,
   }: {
     startTime: DateTime;
     endTime: DateTime;
+    timeZone: Appointment["timeZone"];
   }): boolean {
-    const businessStart = startTime.set({
+    const localStartTime = startTime.setZone(timeZone);
+    const localEndTime = endTime.setZone(timeZone);
+    const businessStart = localStartTime.set({
       hour: 9,
       minute: 0,
       second: 0,
       millisecond: 0,
     });
-    const businessEnd = startTime.set({
+    const businessEnd = localStartTime.set({
       hour: 17,
       minute: 0,
       second: 0,
       millisecond: 0,
     });
 
-    return startTime >= businessStart && endTime <= businessEnd;
+    return localStartTime >= businessStart && localEndTime <= businessEnd;
   }
 
   /**
