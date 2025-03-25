@@ -379,6 +379,24 @@ describe("Appointment Class Methods", () => {
       expect(isConflicting).toBe(true);
     });
 
+    it("should return true if the appointment starts before an existing appointment and ends after it", () => {
+      const existingAppointment = makeFakeAppointmentInstance({
+        appointmentDateTime: "2025-01-01T01:00:00Z",
+      });
+
+      // @ts-expect-error
+      Appointment.save(existingAppointment);
+
+      const isConflicting = Appointment.conflictsWithExistingAppointments({
+        // 30 minutes before the existing appointment starts
+        startTime: DateTime.fromISO("2025-01-01T00:30:00Z"),
+        // 30 minutes after the existing appointment starts
+        endTime: DateTime.fromISO("2025-01-01T01:30:00Z"),
+      });
+
+      expect(isConflicting).toBe(true);
+    });
+
     it("should return false if the appointment does not conflict with any existing appointments", () => {
       const existingAppointment = makeFakeAppointmentInstance({
         appointmentDateTime: "2025-01-01T01:00:00Z",
