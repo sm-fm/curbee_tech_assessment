@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import Appointment from "../appointment";
-import { describe, it, expect } from "@jest/globals";
+import { describe, it, expect, jest } from "@jest/globals";
 
 /**
  * I'm not using a database for this project, so I'm using an in-memory array to store appointments.
@@ -341,6 +341,102 @@ describe("Appointment Class Methods", () => {
       });
 
       expect(isWithinWorkingHours).toBe(false);
+    });
+  });
+
+  describe("canSchedule()", () => {
+    it("calls isWithinWorkingHours() with the appropriate startTime and endTime", () => {
+      const isWithinWorkingHoursSpy = jest
+        .spyOn(Appointment, "isWithinWorkingHours")
+        .mockReturnValue(true);
+      jest
+        .spyOn(Appointment, "conflictsWithExistingAppointments")
+        .mockReturnValue(true);
+
+      const appointmentDateTime = DateTime.fromISO("2025-01-01T14:00:00Z");
+      Appointment.canSchedule({
+        // @ts-expect-error - .toISO() can return a null value, so because we know it won't here, we can suppress the error
+        appointmentDateTime: appointmentDateTime.toISO(),
+        timeZone: "America/New_York",
+        appointmentDuration: 30,
+      });
+
+      expect(isWithinWorkingHoursSpy).toHaveBeenCalledWith({
+        startTime: appointmentDateTime,
+        endTime: appointmentDateTime.plus({ minutes: 30 }),
+        timeZone: "America/New_York",
+      });
+    });
+
+    it("calls conflictsWithExistingAppointments() with the appropriate startTime and endTime", () => {
+      jest.spyOn(Appointment, "isWithinWorkingHours").mockReturnValue(true);
+      const conflictsWithExistingAppointmentsSpy = jest
+        .spyOn(Appointment, "conflictsWithExistingAppointments")
+        .mockReturnValue(true);
+
+      const appointmentDateTime = DateTime.fromISO("2025-01-01T14:00:00Z");
+      Appointment.canSchedule({
+        // @ts-expect-error - .toISO() can return a null value, so because we know it won't here, we can suppress the error
+        appointmentDateTime: appointmentDateTime.toISO(),
+        timeZone: "America/New_York",
+        appointmentDuration: 30,
+      });
+
+      expect(conflictsWithExistingAppointmentsSpy).toHaveBeenCalledWith({
+        startTime: appointmentDateTime,
+        endTime: appointmentDateTime.plus({ minutes: 30 }),
+      });
+    });
+
+    it("returns false if isWithinWorkingHours() and conflictsWithExistingAppointments() return false", () => {
+      jest.spyOn(Appointment, "isWithinWorkingHours").mockReturnValue(false);
+      jest
+        .spyOn(Appointment, "conflictsWithExistingAppointments")
+        .mockReturnValue(false);
+
+      const appointmentDateTime = DateTime.fromISO("2025-01-01T14:00:00Z");
+      const canSchedule = Appointment.canSchedule({
+        // @ts-expect-error - .toISO() can return a null value, so because we know it won't here, we can suppress the error
+        appointmentDateTime: appointmentDateTime.toISO(),
+        timeZone: "America/New_York",
+        appointmentDuration: 30,
+      });
+
+      expect(canSchedule).toBe(false);
+    });
+
+    it("returns false if isWithinWorkingHours() returns true but conflictsWithExistingAppointments() returns true", () => {
+      jest.spyOn(Appointment, "isWithinWorkingHours").mockReturnValue(true);
+      jest
+        .spyOn(Appointment, "conflictsWithExistingAppointments")
+        .mockReturnValue(true);
+
+      const appointmentDateTime = DateTime.fromISO("2025-01-01T14:00:00Z");
+      const canSchedule = Appointment.canSchedule({
+        // @ts-expect-error - .toISO() can return a null value, so because we know it won't here, we can suppress the error
+        appointmentDateTime: appointmentDateTime.toISO(),
+        timeZone: "America/New_York",
+        appointmentDuration: 30,
+      });
+
+      expect(canSchedule).toBe(false);
+    });
+
+    it("returns true if isWithinWorkingHours() returns true and conflictsWithExistingAppointments() returns false", () => {
+      jest.spyOn(Appointment, "isWithinWorkingHours").mockReturnValue(true);
+      jest
+        .spyOn(Appointment, "conflictsWithExistingAppointments")
+        .mockReturnValue(false);
+
+      const appointmentDateTime = DateTime.fromISO("2025-01-01T14:00:00Z");
+      const canSchedule = Appointment.canSchedule({
+        // @ts-expect-error - .toISO() can return a null value, so because we know it won't here, we can suppress the error
+        appointmentDateTime: appointmentDateTime.toISO(),
+        timeZone: "America/New_York",
+        appointmentDuration: 30,
+      });
+
+      expect(canSchedule).toBe(true);
     });
   });
 });

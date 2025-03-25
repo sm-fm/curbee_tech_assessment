@@ -119,13 +119,13 @@ class Appointment {
       endTime,
       timeZone,
     });
-    const conflictsWithOtherAppointments =
+    const conflictsWithExistingAppointments =
       this.conflictsWithExistingAppointments({
         startTime,
         endTime,
       });
 
-    if (!isWithinWorkingHours || conflictsWithOtherAppointments) {
+    if (!isWithinWorkingHours || conflictsWithExistingAppointments) {
       return false;
     }
 
