@@ -8,7 +8,7 @@ import { describe, it, expect } from "@jest/globals";
  * @ts-expect-error comments. This is not advisable for production code.
  */
 describe("Appointment Class Methods", () => {
-  describe.only("conflictsWithExistingAppointments()", () => {
+  describe("conflictsWithExistingAppointments()", () => {
     it("should return true if the appointment starts and ends at the same time as another appointment", () => {
       // Normally would use libraries to create dynamic data to prevent flaky tests.
       const existingAppointment = new Appointment({
@@ -259,6 +259,88 @@ describe("Appointment Class Methods", () => {
       });
 
       expect(isConflicting).toBe(false);
+    });
+  });
+
+  describe("isWithinWorkingHours()", () => {
+    it("should return true if the appointment is within working hours for Eastern time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T14:00:00Z"), // 9:00 AM ET
+        endTime: DateTime.fromISO("2025-01-01T15:00:00Z"), // 10:00 AM ET
+        timeZone: "America/New_York",
+      });
+
+      expect(isWithinWorkingHours).toBe(true);
+    });
+
+    it("should return true if the appointment is within working hours for Central time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T15:00:00Z"), // 9:00 AM CT
+        endTime: DateTime.fromISO("2025-01-01T16:00:00Z"), // 10:00 AM CT
+        timeZone: "America/Chicago",
+      });
+
+      expect(isWithinWorkingHours).toBe(true);
+    });
+
+    it("should return true if the appointment is within working hours for Mountain time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T16:00:00Z"), // 9:00 AM MT
+        endTime: DateTime.fromISO("2025-01-01T17:00:00Z"), // 10:00 AM MT
+        timeZone: "America/Denver",
+      });
+
+      expect(isWithinWorkingHours).toBe(true);
+    });
+
+    it("should return true if the appointment is within working hours for Pacific time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T17:00:00Z"), // 9:00 AM PT
+        endTime: DateTime.fromISO("2025-01-01T18:00:00Z"), // 10:00 AM PT
+        timeZone: "America/Los_Angeles",
+      });
+
+      expect(isWithinWorkingHours).toBe(true);
+    });
+
+    it("should return false if the appointment is outside working hours for Eastern time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T13:00:00Z"), // 8:00 AM ET
+        endTime: DateTime.fromISO("2025-01-01T14:00:00Z"), // 9:00 AM ET
+        timeZone: "America/New_York",
+      });
+
+      expect(isWithinWorkingHours).toBe(false);
+    });
+
+    it("should return false if the appointment is outside working hours for Central time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T14:00:00Z"), // 8:00 AM CT
+        endTime: DateTime.fromISO("2025-01-01T15:00:00Z"), // 9:00 AM CT
+        timeZone: "America/Chicago",
+      });
+
+      expect(isWithinWorkingHours).toBe(false);
+    });
+
+    it("should return false if the appointment is outside working hours for Mountain time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T15:00:00Z"), // 8:00 AM MT
+        endTime: DateTime.fromISO("2025-01-01T16:00:00Z"), // 9:00 AM MT
+        timeZone: "America/Denver",
+      });
+
+      expect(isWithinWorkingHours).toBe(false);
+    });
+
+    it("should return false if the appointment is outside working hours for Pacific time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T16:00:00Z"), // 8:00 AM PT
+        endTime: DateTime.fromISO("2025-01-01T17:00:00Z"), // 9:00 AM PT
+        timeZone: "America/Los_Angeles",
+      });
+
+      expect(isWithinWorkingHours).toBe(false);
     });
   });
 });
