@@ -1,346 +1,94 @@
+import {
+  describe,
+  it,
+  expect,
+  jest,
+  afterEach,
+  beforeEach,
+} from "@jest/globals";
 import { DateTime } from "luxon";
 import Appointment from "../appointment";
-import { describe, it, expect, jest } from "@jest/globals";
-
+import { makeFakeAppointmentInstance } from "./fake/makeFakeAppointmentInstance";
 /**
  * I'm not using a database for this project, so I'm using an in-memory array to store appointments.
  * This means I need to manually add appointments to the array to test the methods, so you'll see some
  * @ts-expect-error comments. This is not advisable for production code.
+ *
+ * I hardcoded some appointment data, normally I would encapsulate this to create dynamic data to prevent flaky tests.
+ *
+ * The following tests are unit tests, so each method's test suite is only testing the behavior within that method. Adding integration tests
+ * would be a good next step depending on how thorough we'd want the tests to be and how else we might reuse some of these methods.
  */
 describe("Appointment Class Methods", () => {
-  describe("conflictsWithExistingAppointments()", () => {
-    it("should return true if the appointment starts and ends at the same time as another appointment", () => {
-      // Normally would use libraries to create dynamic data to prevent flaky tests.
-      const existingAppointment = new Appointment({
-        appointmentDateTime: "2025-01-01T00:00:00Z",
-        timeZone: "America/New_York",
-        customer: {
-          firstName: "John",
-          lastName: "Doe",
-          phone: "1234567890",
-          email: "john.doe@example.com",
-        },
-        location: {
-          line1: "123 Main St",
-          zipCode: "12345",
-          state: "NY",
-          city: "New York",
-        },
-        vehicle: {
-          vin: "1234567890",
-        },
-        appointmentDuration: 30,
-      });
-
-      // @ts-expect-error
-      Appointment.save(existingAppointment);
-
-      const isConflicting = Appointment.conflictsWithExistingAppointments({
-        // Same start time as existing appointment
-        startTime: DateTime.fromISO("2025-01-01T00:00:00Z"),
-        // 30 minutes after the start time
-        endTime: DateTime.fromISO("2025-01-01T00:30:00Z"),
-      });
-
-      expect(isConflicting).toBe(true);
-    });
-
-    it("should return true if the appointment starts before another appointment but ends at the same time as the existing appointment", () => {
-      // Normally would use libraries to create dynamic data to prevent flaky tests.
-      const existingAppointment = new Appointment({
-        appointmentDateTime: "2025-01-01T01:00:00Z",
-        timeZone: "America/New_York",
-        customer: {
-          firstName: "John",
-          lastName: "Doe",
-          phone: "1234567890",
-          email: "john.doe@example.com",
-        },
-        location: {
-          line1: "123 Main St",
-          zipCode: "12345",
-          state: "NY",
-          city: "New York",
-        },
-        vehicle: {
-          vin: "1234567890",
-        },
-        appointmentDuration: 30,
-      });
-
-      // @ts-expect-error
-      Appointment.save(existingAppointment);
-
-      const isConflicting = Appointment.conflictsWithExistingAppointments({
-        // 30 minutes before the existing appointment
-        startTime: DateTime.fromISO("2025-01-01T00:30:00Z"),
-        // Ends the same time as the existing appointment
-        endTime: DateTime.fromISO("2025-01-01T01:30:00Z"),
-      });
-
-      expect(isConflicting).toBe(true);
-    });
-
-    it("should return true if the appointment starts before another appointment but ends within the existing appointment", () => {
-      // Normally would use libraries to create dynamic data to prevent flaky tests.
-      const existingAppointment = new Appointment({
-        appointmentDateTime: "2025-01-01T01:00:00Z",
-        timeZone: "America/New_York",
-        customer: {
-          firstName: "John",
-          lastName: "Doe",
-          phone: "1234567890",
-          email: "john.doe@example.com",
-        },
-        location: {
-          line1: "123 Main St",
-          zipCode: "12345",
-          state: "NY",
-          city: "New York",
-        },
-        vehicle: {
-          vin: "1234567890",
-        },
-        appointmentDuration: 30,
-      });
-
-      // @ts-expect-error
-      Appointment.save(existingAppointment);
-
-      const isConflicting = Appointment.conflictsWithExistingAppointments({
-        // 30 minutes before the existing appointment
-        startTime: DateTime.fromISO("2025-01-01T00:30:00Z"),
-        // Ends 15 minutes before the existing appointment
-        endTime: DateTime.fromISO("2025-01-01T01:15:00Z"),
-      });
-
-      expect(isConflicting).toBe(true);
-    });
-
-    it("should return true if the appointment starts within an existing appointment and ends after it", () => {
-      // Normally would use libraries to create dynamic data to prevent flaky tests.
-      const existingAppointment = new Appointment({
-        appointmentDateTime: "2025-01-01T01:00:00Z",
-        timeZone: "America/New_York",
-        customer: {
-          firstName: "John",
-          lastName: "Doe",
-          phone: "1234567890",
-          email: "john.doe@example.com",
-        },
-        location: {
-          line1: "123 Main St",
-          zipCode: "12345",
-          state: "NY",
-          city: "New York",
-        },
-        vehicle: {
-          vin: "1234567890",
-        },
-        appointmentDuration: 30,
-      });
-
-      // @ts-expect-error
-      Appointment.save(existingAppointment);
-
-      const isConflicting = Appointment.conflictsWithExistingAppointments({
-        // 15 minutes after the existing appointment's start time
-        startTime: DateTime.fromISO("2025-01-01T01:15:00Z"),
-        // Ends 15 minutes after the existing appointment ends
-        endTime: DateTime.fromISO("2025-01-01T01:45:00Z"),
-      });
-
-      expect(isConflicting).toBe(true);
-    });
-
-    it("should return true if the appointment starts at the same time an existing appointment ends", () => {
-      // Normally would use libraries to create dynamic data to prevent flaky tests.
-      const existingAppointment = new Appointment({
-        appointmentDateTime: "2025-01-01T01:00:00Z",
-        timeZone: "America/New_York",
-        customer: {
-          firstName: "John",
-          lastName: "Doe",
-          phone: "1234567890",
-          email: "john.doe@example.com",
-        },
-        location: {
-          line1: "123 Main St",
-          zipCode: "12345",
-          state: "NY",
-          city: "New York",
-        },
-        vehicle: {
-          vin: "1234567890",
-        },
-        appointmentDuration: 30,
-      });
-
-      // @ts-expect-error
-      Appointment.save(existingAppointment);
-
-      const isConflicting = Appointment.conflictsWithExistingAppointments({
-        // Same time as existing appointment ends
-        startTime: DateTime.fromISO("2025-01-01T01:30:00Z"),
-        // 30 minutes after this appointment starts
-        endTime: DateTime.fromISO("2025-01-01T02:00:00Z"),
-      });
-
-      expect(isConflicting).toBe(true);
-    });
-
-    it("should return true if the appointment ends at the same time an existing appointment starts", () => {
-      // Normally would use libraries to create dynamic data to prevent flaky tests.
-      const existingAppointment = new Appointment({
-        appointmentDateTime: "2025-01-01T01:00:00Z",
-        timeZone: "America/New_York",
-        customer: {
-          firstName: "John",
-          lastName: "Doe",
-          phone: "1234567890",
-          email: "john.doe@example.com",
-        },
-        location: {
-          line1: "123 Main St",
-          zipCode: "12345",
-          state: "NY",
-          city: "New York",
-        },
-        vehicle: {
-          vin: "1234567890",
-        },
-        appointmentDuration: 30,
-      });
-
-      // @ts-expect-error
-      Appointment.save(existingAppointment);
-
-      const isConflicting = Appointment.conflictsWithExistingAppointments({
-        // 30 minutes before the existing appointment starts
-        startTime: DateTime.fromISO("2025-01-01T00:30:00Z"),
-        // Same time as the existing appointment starts
-        endTime: DateTime.fromISO("2025-01-01T01:00:00Z"),
-      });
-
-      expect(isConflicting).toBe(true);
-    });
-
-    it("should return false if the appointment does not conflict with any existing appointments", () => {
-      // Normally would use libraries to create dynamic data to prevent flaky tests.
-      const existingAppointment = new Appointment({
-        appointmentDateTime: "2025-01-01T01:00:00Z",
-        timeZone: "America/New_York",
-        customer: {
-          firstName: "John",
-          lastName: "Doe",
-          phone: "1234567890",
-          email: "john.doe@example.com",
-        },
-        location: {
-          line1: "123 Main St",
-          zipCode: "12345",
-          state: "NY",
-          city: "New York",
-        },
-        vehicle: {
-          vin: "1234567890",
-        },
-        appointmentDuration: 30,
-      });
-
-      // @ts-expect-error
-      Appointment.save(existingAppointment);
-
-      const isConflicting = Appointment.conflictsWithExistingAppointments({
-        // 15 minutes after the existing appointment's end time
-        startTime: DateTime.fromISO("2025-01-01T01:45:00Z"),
-        // 30 minutes after the new appointment's start time
-        endTime: DateTime.fromISO("2025-01-01T02:15:00Z"),
-      });
-
-      expect(isConflicting).toBe(false);
-    });
+  // Global cleanup after each test
+  afterEach(() => {
+    // Restore all mocks to their original state
+    jest.restoreAllMocks();
+    // Clear any mock state
+    jest.clearAllMocks();
   });
 
-  describe("isWithinWorkingHours()", () => {
-    it("should return true if the appointment is within working hours for Eastern time zone", () => {
-      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
-        startTime: DateTime.fromISO("2025-01-01T14:00:00Z"), // 9:00 AM ET
-        endTime: DateTime.fromISO("2025-01-01T15:00:00Z"), // 10:00 AM ET
+  describe("schedule()", () => {
+    it("throws if canSchedule() returns false", () => {
+      const appointmentData = {
+        appointmentDateTime: "2025-01-01T14:00:00Z",
         timeZone: "America/New_York",
-      });
+        appointmentDuration: 30,
+        customer: {
+          firstName: "John",
+          lastName: "Doe",
+          phone: "1234567890",
+          email: "john.doe@example.com",
+        },
+        location: {
+          line1: "123 Main St",
+          zipCode: "12345",
+          state: "NY",
+          city: "New York",
+        },
+        vehicle: {
+          vin: "1234567890",
+        },
+      };
 
-      expect(isWithinWorkingHours).toBe(true);
+      jest.spyOn(Appointment, "canSchedule").mockReturnValue(false);
+
+      expect(() => Appointment.schedule(appointmentData)).toThrow(
+        "This appointment time is already booked"
+      );
     });
 
-    it("should return true if the appointment is within working hours for Central time zone", () => {
-      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
-        startTime: DateTime.fromISO("2025-01-01T15:00:00Z"), // 9:00 AM CT
-        endTime: DateTime.fromISO("2025-01-01T16:00:00Z"), // 10:00 AM CT
-        timeZone: "America/Chicago",
-      });
-
-      expect(isWithinWorkingHours).toBe(true);
-    });
-
-    it("should return true if the appointment is within working hours for Mountain time zone", () => {
-      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
-        startTime: DateTime.fromISO("2025-01-01T16:00:00Z"), // 9:00 AM MT
-        endTime: DateTime.fromISO("2025-01-01T17:00:00Z"), // 10:00 AM MT
-        timeZone: "America/Denver",
-      });
-
-      expect(isWithinWorkingHours).toBe(true);
-    });
-
-    it("should return true if the appointment is within working hours for Pacific time zone", () => {
-      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
-        startTime: DateTime.fromISO("2025-01-01T17:00:00Z"), // 9:00 AM PT
-        endTime: DateTime.fromISO("2025-01-01T18:00:00Z"), // 10:00 AM PT
-        timeZone: "America/Los_Angeles",
-      });
-
-      expect(isWithinWorkingHours).toBe(true);
-    });
-
-    it("should return false if the appointment is outside working hours for Eastern time zone", () => {
-      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
-        startTime: DateTime.fromISO("2025-01-01T13:00:00Z"), // 8:00 AM ET
-        endTime: DateTime.fromISO("2025-01-01T14:00:00Z"), // 9:00 AM ET
+    it("calls save() if canSchedule() returns true and returns the saved appointment", () => {
+      const appointmentData = {
+        appointmentDateTime: "2025-01-01T14:00:00Z",
         timeZone: "America/New_York",
-      });
+        appointmentDuration: 30,
+        customer: {
+          firstName: "John",
+          lastName: "Doe",
+          phone: "1234567890",
+          email: "john.doe@example.com",
+        },
+        location: {
+          line1: "123 Main St",
+          zipCode: "12345",
+          state: "NY",
+          city: "New York",
+        },
+        vehicle: {
+          vin: "1234567890",
+        },
+      };
 
-      expect(isWithinWorkingHours).toBe(false);
-    });
+      jest.spyOn(Appointment, "canSchedule").mockReturnValue(true);
+      // @ts-expect-error - .save() is a private method, so we suppress the error knowing we can still spy on it
+      const saveSpy = jest.spyOn(Appointment, "save");
 
-    it("should return false if the appointment is outside working hours for Central time zone", () => {
-      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
-        startTime: DateTime.fromISO("2025-01-01T14:00:00Z"), // 8:00 AM CT
-        endTime: DateTime.fromISO("2025-01-01T15:00:00Z"), // 9:00 AM CT
-        timeZone: "America/Chicago",
-      });
+      const appointment = Appointment.schedule(appointmentData);
 
-      expect(isWithinWorkingHours).toBe(false);
-    });
-
-    it("should return false if the appointment is outside working hours for Mountain time zone", () => {
-      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
-        startTime: DateTime.fromISO("2025-01-01T15:00:00Z"), // 8:00 AM MT
-        endTime: DateTime.fromISO("2025-01-01T16:00:00Z"), // 9:00 AM MT
-        timeZone: "America/Denver",
-      });
-
-      expect(isWithinWorkingHours).toBe(false);
-    });
-
-    it("should return false if the appointment is outside working hours for Pacific time zone", () => {
-      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
-        startTime: DateTime.fromISO("2025-01-01T16:00:00Z"), // 8:00 AM PT
-        endTime: DateTime.fromISO("2025-01-01T17:00:00Z"), // 9:00 AM PT
-        timeZone: "America/Los_Angeles",
-      });
-
-      expect(isWithinWorkingHours).toBe(false);
+      // Use expect.objectContaining() because we don't know the id since it's generated by the model
+      expect(appointment).toEqual(expect.objectContaining(appointmentData));
+      expect(saveSpy).toHaveBeenCalledWith(appointmentData);
     });
   });
 
@@ -437,6 +185,216 @@ describe("Appointment Class Methods", () => {
       });
 
       expect(canSchedule).toBe(true);
+    });
+  });
+
+  describe("isWithinWorkingHours()", () => {
+    it("should return true if the appointment is within working hours for Eastern time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T14:00:00Z"), // 9:00 AM ET
+        endTime: DateTime.fromISO("2025-01-01T15:00:00Z"), // 10:00 AM ET
+        timeZone: "America/New_York",
+      });
+
+      expect(isWithinWorkingHours).toBe(true);
+    });
+
+    it("should return true if the appointment is within working hours for Central time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T15:00:00Z"), // 9:00 AM CT
+        endTime: DateTime.fromISO("2025-01-01T16:00:00Z"), // 10:00 AM CT
+        timeZone: "America/Chicago",
+      });
+
+      expect(isWithinWorkingHours).toBe(true);
+    });
+
+    it("should return true if the appointment is within working hours for Mountain time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T16:00:00Z"), // 9:00 AM MT
+        endTime: DateTime.fromISO("2025-01-01T17:00:00Z"), // 10:00 AM MT
+        timeZone: "America/Denver",
+      });
+
+      expect(isWithinWorkingHours).toBe(true);
+    });
+
+    it("should return true if the appointment is within working hours for Pacific time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T17:00:00Z"), // 9:00 AM PT
+        endTime: DateTime.fromISO("2025-01-01T18:00:00Z"), // 10:00 AM PT
+        timeZone: "America/Los_Angeles",
+      });
+
+      expect(isWithinWorkingHours).toBe(true);
+    });
+
+    it("should return false if the appointment is outside working hours for Eastern time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T13:00:00Z"), // 8:00 AM ET
+        endTime: DateTime.fromISO("2025-01-01T14:00:00Z"), // 9:00 AM ET
+        timeZone: "America/New_York",
+      });
+
+      expect(isWithinWorkingHours).toBe(false);
+    });
+
+    it("should return false if the appointment is outside working hours for Central time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T14:00:00Z"), // 8:00 AM CT
+        endTime: DateTime.fromISO("2025-01-01T15:00:00Z"), // 9:00 AM CT
+        timeZone: "America/Chicago",
+      });
+
+      expect(isWithinWorkingHours).toBe(false);
+    });
+
+    it("should return false if the appointment is outside working hours for Mountain time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T15:00:00Z"), // 8:00 AM MT
+        endTime: DateTime.fromISO("2025-01-01T16:00:00Z"), // 9:00 AM MT
+        timeZone: "America/Denver",
+      });
+
+      expect(isWithinWorkingHours).toBe(false);
+    });
+
+    it("should return false if the appointment is outside working hours for Pacific time zone", () => {
+      const isWithinWorkingHours = Appointment.isWithinWorkingHours({
+        startTime: DateTime.fromISO("2025-01-01T16:00:00Z"), // 8:00 AM PT
+        endTime: DateTime.fromISO("2025-01-01T17:00:00Z"), // 9:00 AM PT
+        timeZone: "America/Los_Angeles",
+      });
+
+      expect(isWithinWorkingHours).toBe(false);
+    });
+  });
+
+  describe("conflictsWithExistingAppointments()", () => {
+    it("should return true if the appointment starts and ends at the same time as another appointment", () => {
+      const existingAppointment = makeFakeAppointmentInstance({
+        appointmentDateTime: "2025-01-01T00:00:00Z",
+      });
+
+      // @ts-expect-error
+      Appointment.save(existingAppointment);
+
+      const isConflicting = Appointment.conflictsWithExistingAppointments({
+        // Same start time as existing appointment
+        startTime: DateTime.fromISO("2025-01-01T00:00:00Z"),
+        // 30 minutes after the start time
+        endTime: DateTime.fromISO("2025-01-01T00:30:00Z"),
+      });
+
+      expect(isConflicting).toBe(true);
+    });
+
+    it("should return true if the appointment starts before another appointment but ends at the same time as the existing appointment", () => {
+      const existingAppointment = makeFakeAppointmentInstance({
+        appointmentDateTime: "2025-01-01T01:00:00Z",
+      });
+
+      // @ts-expect-error
+      Appointment.save(existingAppointment);
+
+      const isConflicting = Appointment.conflictsWithExistingAppointments({
+        // 30 minutes before the existing appointment
+        startTime: DateTime.fromISO("2025-01-01T00:30:00Z"),
+        // Ends the same time as the existing appointment
+        endTime: DateTime.fromISO("2025-01-01T01:30:00Z"),
+      });
+
+      expect(isConflicting).toBe(true);
+    });
+
+    it("should return true if the appointment starts before another appointment but ends within the existing appointment", () => {
+      const existingAppointment = makeFakeAppointmentInstance({
+        appointmentDateTime: "2025-01-01T01:00:00Z",
+      });
+
+      // @ts-expect-error
+      Appointment.save(existingAppointment);
+
+      const isConflicting = Appointment.conflictsWithExistingAppointments({
+        // 30 minutes before the existing appointment
+        startTime: DateTime.fromISO("2025-01-01T00:30:00Z"),
+        // Ends 15 minutes before the existing appointment
+        endTime: DateTime.fromISO("2025-01-01T01:15:00Z"),
+      });
+
+      expect(isConflicting).toBe(true);
+    });
+
+    it("should return true if the appointment starts within an existing appointment and ends after it", () => {
+      const existingAppointment = makeFakeAppointmentInstance({
+        appointmentDateTime: "2025-01-01T01:00:00Z",
+      });
+
+      // @ts-expect-error
+      Appointment.save(existingAppointment);
+
+      const isConflicting = Appointment.conflictsWithExistingAppointments({
+        // 15 minutes after the existing appointment's start time
+        startTime: DateTime.fromISO("2025-01-01T01:15:00Z"),
+        // Ends 15 minutes after the existing appointment ends
+        endTime: DateTime.fromISO("2025-01-01T01:45:00Z"),
+      });
+
+      expect(isConflicting).toBe(true);
+    });
+
+    it("should return true if the appointment starts at the same time an existing appointment ends", () => {
+      const existingAppointment = makeFakeAppointmentInstance({
+        appointmentDateTime: "2025-01-01T01:00:00Z",
+      });
+
+      // @ts-expect-error
+      Appointment.save(existingAppointment);
+
+      const isConflicting = Appointment.conflictsWithExistingAppointments({
+        // Same time as existing appointment ends
+        startTime: DateTime.fromISO("2025-01-01T01:30:00Z"),
+        // 30 minutes after this appointment starts
+        endTime: DateTime.fromISO("2025-01-01T02:00:00Z"),
+      });
+
+      expect(isConflicting).toBe(true);
+    });
+
+    it("should return true if the appointment ends at the same time an existing appointment starts", () => {
+      const existingAppointment = makeFakeAppointmentInstance({
+        appointmentDateTime: "2025-01-01T01:00:00Z",
+      });
+
+      // @ts-expect-error
+      Appointment.save(existingAppointment);
+
+      const isConflicting = Appointment.conflictsWithExistingAppointments({
+        // 30 minutes before the existing appointment starts
+        startTime: DateTime.fromISO("2025-01-01T00:30:00Z"),
+        // Same time as the existing appointment starts
+        endTime: DateTime.fromISO("2025-01-01T01:00:00Z"),
+      });
+
+      expect(isConflicting).toBe(true);
+    });
+
+    it("should return false if the appointment does not conflict with any existing appointments", () => {
+      const existingAppointment = makeFakeAppointmentInstance({
+        appointmentDateTime: "2025-01-01T01:00:00Z",
+      });
+
+      // @ts-expect-error
+      Appointment.save(existingAppointment);
+
+      const isConflicting = Appointment.conflictsWithExistingAppointments({
+        // 15 minutes after the existing appointment's end time
+        startTime: DateTime.fromISO("2025-01-01T01:45:00Z"),
+        // 30 minutes after the new appointment's start time
+        endTime: DateTime.fromISO("2025-01-01T02:15:00Z"),
+      });
+
+      expect(isConflicting).toBe(false);
     });
   });
 });
